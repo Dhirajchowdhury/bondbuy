@@ -1,0 +1,8 @@
+
+{
+  "name": "bondbuy",
+  "description": "A high-impact, Web3 fintech landing page for tokenized government bonds, featuring Solana Devnet NFT minting and Phantom Wallet integration.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

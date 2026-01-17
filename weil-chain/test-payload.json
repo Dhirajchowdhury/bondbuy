@@ -1,0 +1,14 @@
+{
+  "wallet_address": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+  "bond_id": "in-gs-2030",
+  "bond_name": "India G-Sec 2030 (7.18%)",
+  "units": 10,
+  "invested_amount": 1000,
+  "bond_metadata": {
+    "active_status": true,
+    "total_supply": 10000000,
+    "issued_supply": 1600000,
+    "apy": 718,
+    "maturity_date": "2030-01-15T00:00:00.000Z"
+  }
+}
