@@ -22,7 +22,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ portfolio, tick }) => {
           RWA <span className="text-orange-500 italic">VAULT.</span>
         </h1>
         <p className="text-zinc-500 font-bold uppercase tracking-widest text-sm">
-          Verified fractional bond ownership via <span className="text-white">Solana NFTs</span>.
+          Verified fractional bond ownership via <span className="text-white">Weil Chain NFTs</span>.
         </p>
       </header>
 

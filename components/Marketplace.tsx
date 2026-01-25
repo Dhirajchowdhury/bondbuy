@@ -4,15 +4,15 @@ import { Bond } from '../App';
 interface MarketplaceProps {
   bonds: Bond[];
   balance: number;
-  solBalance: number;
+  weilBalance: number;
   onBuy: (id: string, amount: number) => void;
   isMinting: boolean;
 }
 
-const Marketplace: React.FC<MarketplaceProps> = ({ bonds, balance, solBalance, onBuy, isMinting }) => {
+const Marketplace: React.FC<MarketplaceProps> = ({ bonds, balance, weilBalance, onBuy, isMinting }) => {
   const [selectedBond, setSelectedBond] = useState<Bond | null>(null);
   const [buyAmountInr, setBuyAmountInr] = useState('');
-  const SOL_TO_INR_RATE = 12500;
+  const WEIL_TO_INR_RATE = 12500;
 
   const handleConfirm = () => {
     if (selectedBond && Number(buyAmountInr) > 0) {
@@ -22,8 +22,8 @@ const Marketplace: React.FC<MarketplaceProps> = ({ bonds, balance, solBalance, o
     }
   };
 
-  const solRequired = Number(buyAmountInr) / SOL_TO_INR_RATE;
-  const insufficientFunds = solRequired > solBalance;
+  const weilRequired = Number(buyAmountInr) / WEIL_TO_INR_RATE;
+  const insufficientFunds = weilRequired > weilBalance;
 
   return (
     <div className="pt-32 pb-20 px-6 lg:px-12 max-w-[1400px] mx-auto animate-in fade-in duration-500">
@@ -40,12 +40,12 @@ const Marketplace: React.FC<MarketplaceProps> = ({ bonds, balance, solBalance, o
                 <span className="text-white">Devnet Live</span>
               </span>
               <span className="text-zinc-700">•</span>
-              <span>1 SOL ≈ ₹12,500</span>
+              <span>1 WEIL ≈ ₹12,500</span>
             </p>
           </div>
           <div className="bg-zinc-900/50 border border-white/5 rounded-2xl px-6 py-4">
             <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-1">Your Balance</p>
-            <p className="text-2xl font-black text-white">{solBalance.toFixed(4)} <span className="text-orange-500">SOL</span></p>
+            <p className="text-2xl font-black text-white">{weilBalance.toFixed(4)} <span className="text-orange-500">WEIL</span></p>
           </div>
         </div>
       </header>
@@ -190,7 +190,7 @@ const Marketplace: React.FC<MarketplaceProps> = ({ bonds, balance, solBalance, o
                 <div className="flex justify-between items-center">
                   <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">You Pay</span>
                   <span className={`text-xl font-black ${insufficientFunds ? 'text-red-500' : 'text-white'}`}>
-                    {solRequired.toFixed(4)} SOL
+                    {weilRequired.toFixed(4)} WEIL
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -201,7 +201,7 @@ const Marketplace: React.FC<MarketplaceProps> = ({ bonds, balance, solBalance, o
                 </div>
                 <div className="flex justify-between items-center pt-4 border-t border-white/5">
                   <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Wallet Balance</span>
-                  <span className="text-sm font-bold text-zinc-400">{solBalance.toFixed(4)} SOL</span>
+                  <span className="text-sm font-bold text-zinc-400">{weilBalance.toFixed(4)} WEIL</span>
                 </div>
               </div>
 
@@ -211,11 +211,11 @@ const Marketplace: React.FC<MarketplaceProps> = ({ bonds, balance, solBalance, o
                 disabled={!buyAmountInr || insufficientFunds || Number(buyAmountInr) < 100}
                 className="w-full bg-orange-500 text-black py-5 rounded-full font-black uppercase tracking-widest text-lg hover:bg-orange-400 transition-all disabled:opacity-30 disabled:cursor-not-allowed active:scale-[0.98] shadow-xl shadow-orange-500/20"
               >
-                {insufficientFunds ? 'Insufficient SOL Balance' : 'Confirm & Mint'}
+                {insufficientFunds ? 'Insufficient WEIL Balance' : 'Confirm & Mint'}
               </button>
 
               <p className="text-center text-[10px] font-bold uppercase tracking-widest text-zinc-600">
-                Transaction will be processed on Solana Devnet
+                Transaction will be processed on Weil Chain Network
               </p>
             </div>
           </div>

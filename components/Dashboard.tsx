@@ -5,11 +5,11 @@ import { Holding } from '../App';
 interface DashboardProps {
   address: string;
   portfolio: Holding[];
-  solBalance: number;
+  weilBalance: number;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ address, portfolio, solBalance }) => {
-  const SOL_TO_INR = 12500;
+const Dashboard: React.FC<DashboardProps> = ({ address, portfolio, weilBalance }) => {
+  const WEIL_TO_INR = 12500;
   
   const stats = useMemo(() => {
     const totalInvested = portfolio.reduce((sum, h) => sum + h.investedAmount, 0);
@@ -25,7 +25,7 @@ const Dashboard: React.FC<DashboardProps> = ({ address, portfolio, solBalance })
         </h1>
         <p className="text-zinc-500 font-bold uppercase tracking-widest text-sm flex items-center gap-3">
           <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-          SOLANA DEVNET: <span className="text-white truncate max-w-[200px]">{address}</span>
+          WEIL CHAIN NETWORK: <span className="text-white truncate max-w-[200px]">{address}</span>
         </p>
       </header>
 
@@ -35,8 +35,8 @@ const Dashboard: React.FC<DashboardProps> = ({ address, portfolio, solBalance })
           <span className="text-4xl lg:text-6xl font-black tracking-tighter">₹{stats.totalInvested.toLocaleString('en-IN')}</span>
         </div>
         <div className="flex flex-col gap-2 border-r border-white/5 px-8">
-          <span className="text-zinc-500 font-black uppercase tracking-widest text-[10px]">SOL Balance</span>
-          <span className="text-4xl lg:text-6xl font-black tracking-tighter">{solBalance.toFixed(3)}</span>
+          <span className="text-zinc-500 font-black uppercase tracking-widest text-[10px]">WEIL Balance</span>
+          <span className="text-4xl lg:text-6xl font-black tracking-tighter">{weilBalance.toFixed(3)}</span>
         </div>
         <div className="flex flex-col gap-2 border-r border-white/5 px-8">
           <span className="text-zinc-500 font-black uppercase tracking-widest text-[10px]">Avg APY</span>
@@ -65,7 +65,7 @@ const Dashboard: React.FC<DashboardProps> = ({ address, portfolio, solBalance })
           <div className="bg-white text-black p-10 rounded-[2.5rem] flex flex-col justify-between h-full min-h-[300px]">
             <div>
               <h3 className="text-xs font-black uppercase tracking-widest mb-6 opacity-40">Wallet Liquidity (INR)</h3>
-              <div className="text-5xl font-black tracking-tighter">₹{(solBalance * SOL_TO_INR).toLocaleString('en-IN')}</div>
+              <div className="text-5xl font-black tracking-tighter">₹{(weilBalance * WEIL_TO_INR).toLocaleString('en-IN')}</div>
             </div>
             <p className="text-[10px] font-bold uppercase tracking-widest leading-relaxed mt-4">
               Funds reside in your Phantom wallet. Every purchase mints a tradeable RWA NFT.

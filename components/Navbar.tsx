@@ -16,6 +16,8 @@ const Navbar: React.FC<NavbarProps> = ({ onConnect, isConnected, address, onNavi
         { label: 'Market', id: 'market' },
         { label: 'Portfolio', id: 'portfolio' },
         { label: 'Yield', id: 'yield' },
+        { label: 'SIP', id: 'sip' },
+        { label: 'Faucet', id: 'faucet' },
         { label: 'Education', id: 'education' }
       ]
     : [
@@ -57,8 +59,8 @@ const Navbar: React.FC<NavbarProps> = ({ onConnect, isConnected, address, onNavi
         <div className="flex items-center gap-4">
           {isConnected && (
             <div className="hidden lg:flex flex-col items-end">
-              <span className="text-[8px] font-black text-orange-500 uppercase tracking-widest">Devnet Mode</span>
-              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-tight">Solana Network</span>
+              <span className="text-[8px] font-black text-orange-500 uppercase tracking-widest">Weil Chain</span>
+              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-tight">EIBS Network</span>
             </div>
           )}
           <button 

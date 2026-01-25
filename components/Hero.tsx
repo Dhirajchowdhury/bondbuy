@@ -21,7 +21,8 @@ const Hero: React.FC<HeroProps> = ({ onConnect, isConnected }) => {
           </h1>
           
           <p className="max-w-xl text-zinc-400 text-xl md:text-2xl font-medium leading-relaxed mb-10">
-            Invest in fractional G-Secs and SDLs using Solana Devnet SOL. <br />
+            Invest in fractional G-Secs and SDLs using Weil Chain WEIL tokens. <br />
+            Built on <span className="text-orange-500">EIBS 2.0 Network</span> for security and compliance.
             Built for the <span className="text-white">next generation</span> of Indian retail investors.
           </p>
 

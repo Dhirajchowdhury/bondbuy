@@ -98,7 +98,7 @@ const MintSuccessModal: React.FC<MintSuccessModalProps> = ({
               <div className="space-y-4">
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 mb-1">Network</p>
-                  <p className="text-sm font-bold text-white">Solana Devnet</p>
+                  <p className="text-sm font-bold text-white">Weil Chain Network</p>
                 </div>
                 
                 <div>

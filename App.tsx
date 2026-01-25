@@ -1,17 +1,20 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-import * as web3 from '@solana/web3.js';
+import { weilWallet, WeilWallet, WeilTransaction, WEIL_TO_INR_RATE } from './lib/weilWallet';
 import Navbar from './components/Navbar';
 import LandingPage from './components/LandingPage';
 import Dashboard from './components/Dashboard';
 import Marketplace from './components/Marketplace';
 import Portfolio from './components/Portfolio';
 import YieldPage from './components/YieldPage';
+import SIPPage from './components/SIPPage';
+import Faucet from './components/Faucet';
 import Education from './components/Education';
 import Footer from './components/Footer';
 import MintSuccessModal from './components/MintSuccessModal';
 import ExecutionReceipt from './components/ExecutionReceipt';
 import { saveHolding, fetchHoldings, HoldingRecord } from './lib/supabase';
+import { verifyBondMinting } from './lib/weilChain';
 
 // --- Types & Constants ---
 export interface Bond {
@@ -38,7 +41,7 @@ export interface Holding {
   txHash: string;
 }
 
-export type View = 'dashboard' | 'market' | 'portfolio' | 'yield' | 'education' | 'landing' | 'receipt';
+export type View = 'dashboard' | 'market' | 'portfolio' | 'yield' | 'sip' | 'faucet' | 'education' | 'landing' | 'receipt';
 
 const INDIAN_BONDS: Bond[] = [
   { id: 'in-gs-2030', name: 'India G-Sec 2030 (7.18%)', apy: 7.18, maturityDate: '2030-01-15', pricePerUnit: 100, risk: 'Sovereign', duration: '6 Years', totalSupply: 10000000, remainingSupply: 8400000 },
@@ -47,13 +50,12 @@ const INDIAN_BONDS: Bond[] = [
   { id: 'rbi-float', name: 'RBI Floating Rate Bond', apy: 8.05, maturityDate: '2031-12-01', pricePerUnit: 1000, risk: 'Sovereign', duration: '7 Years', totalSupply: 5000000, remainingSupply: 4800000 },
 ];
 
-const SOL_TO_INR_DEMO_RATE = 12500;
-const TREASURY_PUBKEY = new web3.PublicKey('G787rV6z3V1XN9N7Yy1X6Zz3V1XN9N7Yy1X6Zz3V1XN');
+const WEIL_TO_INR_DEMO_RATE = 12500;
 
 const App: React.FC = () => {
   const [walletConnected, setWalletConnected] = useState(false);
-  const [pubkey, setPubkey] = useState<string | null>(null);
-  const [solBalance, setSolBalance] = useState<number>(0);
+  const [currentWallet, setCurrentWallet] = useState<WeilWallet | null>(null);
+  const [weilBalance, setWeilBalance] = useState<number>(0);
   const [currentView, setCurrentView] = useState<View>('landing');
   const [currentReceiptId, setCurrentReceiptId] = useState<string | null>(null);
   const [portfolio, setPortfolio] = useState<Holding[]>([]);
@@ -70,9 +72,6 @@ const App: React.FC = () => {
     certificateId: string;
     receiptId?: string | null;
   } | null>(null);
-
-  // Initialize connection to Devnet
-  const connection = new web3.Connection(web3.clusterApiUrl('devnet'), 'confirmed');
 
   useEffect(() => {
     const timer = setInterval(() => setTick(t => t + 1), 1000);
@@ -98,17 +97,6 @@ const App: React.FC = () => {
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
-  const fetchBalance = useCallback(async (publicKey: web3.PublicKey) => {
-    try {
-      console.log('[Phantom] Fetching SOL balance for:', publicKey.toString());
-      const balance = await connection.getBalance(publicKey);
-      setSolBalance(balance / web3.LAMPORTS_PER_SOL);
-      console.log('[Phantom] Balance updated:', (balance / web3.LAMPORTS_PER_SOL).toFixed(4), 'SOL');
-    } catch (e) {
-      console.error("[Phantom] Failed to fetch balance:", e);
-    }
-  }, []);
-
   // Load holdings from Supabase when wallet connects
   const loadHoldings = useCallback(async (walletAddress: string) => {
     console.log('[Supabase] Loading holdings for wallet:', walletAddress);
@@ -132,80 +120,34 @@ const App: React.FC = () => {
   }, []);
 
   /**
-   * CORRECT PHANTOM CONNECTION IMPLEMENTATION
-   * Directly uses window.solana (Phantom Provider).
-   * Prevents any redirection by handling the browser extension natively.
+   * Connects to Weil Chain wallet
+   * Simulates wallet connection for demo purposes
    */
   const connectWallet = async () => {
-    const { solana } = window as any;
-    
-    // 1. Detection Phase
-    console.log('[Phantom] Checking for window.solana provider...');
-    if (!solana || !solana.isPhantom) {
-      console.warn('[Phantom] Extension not detected.');
-      alert("Phantom Wallet extension not detected. Please install it from https://phantom.app/ (Direct links/redirects are disabled for security).");
-      return;
-    }
-
-    if (isConnecting) return;
     setIsConnecting(true);
-
-    console.log('[Phantom] Extension detected. Triggering connect() popup...');
-
+    
     try {
-      // Check if already connected
-      if (solana.isConnected && solana.publicKey) {
-        const publicKey = solana.publicKey.toString();
-        console.log('[Phantom] Already connected. Public Key:', publicKey);
-        setPubkey(publicKey);
-        setWalletConnected(true);
-        fetchBalance(solana.publicKey);
-        loadHoldings(publicKey);
-        if (currentView === 'landing') {
-          setCurrentView('dashboard');
-        }
-        setIsConnecting(false);
-        return;
-      }
-
-      // 2. Request Connection (Extension Popup)
-      // Use eager connect first, then fall back to regular connect
-      let response;
-      try {
-        response = await solana.connect({ onlyIfTrusted: true });
-      } catch {
-        // If eager connect fails, try regular connect
-        response = await solana.connect();
-      }
+      console.log('[App] Connecting to Weil Chain wallet...');
       
-      const publicKey = response.publicKey.toString();
+      const wallet = await weilWallet.connect();
       
-      console.log('[Phantom] Connection approved. Public Key:', publicKey);
-      
-      setPubkey(publicKey);
+      setCurrentWallet(wallet);
       setWalletConnected(true);
-      fetchBalance(response.publicKey);
-      loadHoldings(publicKey);
+      setWeilBalance(wallet.balance);
+      
+      // Load portfolio for this wallet
+      await loadHoldings(wallet.address);
       
       // Auto-transition to dashboard if user is on landing page
       if (currentView === 'landing') {
         setCurrentView('dashboard');
       }
-    } catch (err: any) {
-      // Handle user cancellation (Error code 4001) or other errors
-      if (err.code === 4001 || err.message?.includes('User rejected')) {
-        console.warn('[Phantom] Connection request was cancelled by the user.');
-        alert("Connection request cancelled.");
-      } else {
-        console.error("[Phantom] Unexpected error during connection:", err);
-        // Try to disconnect and reconnect
-        try {
-          await solana.disconnect();
-        } catch {}
-        alert("Connection failed. Please try again or refresh the page.");
-      }
-      setWalletConnected(false);
-      setPubkey(null);
+      
+      console.log('[App] Weil Chain wallet connected:', wallet.address);
+      
+    } catch (error) {
+      console.error('[App] Wallet connection failed:', error);
+      alert('Failed to connect Weil Chain wallet. Please try again.');
     } finally {
       setIsConnecting(false);
     }
@@ -213,26 +155,22 @@ const App: React.FC = () => {
 
   // Disconnect wallet function
   const disconnectWallet = async () => {
-    const { solana } = window as any;
-    
-    console.log('[Phantom] Disconnecting wallet...');
+    console.log('[Weil Chain] Disconnecting wallet...');
     
     try {
-      if (solana) {
-        await solana.disconnect();
-      }
+      await weilWallet.disconnect();
     } catch (err) {
-      console.error('[Phantom] Error during disconnect:', err);
+      console.error('[Weil Chain] Error during disconnect:', err);
     }
     
     // Reset state
     setWalletConnected(false);
-    setPubkey(null);
-    setSolBalance(0);
+    setCurrentWallet(null);
+    setWeilBalance(0);
     setPortfolio([]);
     setCurrentView('landing');
     
-    console.log('[Phantom] Wallet disconnected successfully');
+    console.log('[Weil Chain] Wallet disconnected successfully');
   };
 
   // Toggle wallet connection
@@ -246,26 +184,25 @@ const App: React.FC = () => {
 
   const buyBondWithNFT = async (bondId: string, inrAmount: number) => {
     const bond = marketBonds.find(b => b.id === bondId);
-    const { solana } = window as any;
     
-    if (!bond || !pubkey || !solana?.isPhantom) {
-      alert("Please ensure your Phantom extension is connected.");
+    if (!bond || !currentWallet) {
+      alert("Please ensure your Weil Chain wallet is connected.");
       return;
     }
 
     setIsMinting(true);
-    console.log('[Phantom] Initiating transaction for bond:', bondId);
+    console.log('[Weil Chain] Initiating transaction for bond:', bondId);
 
     try {
       // ========================================================================
-      // STEP 1: WEIL CHAIN VERIFICATION (HACKATHON REQUIREMENT)
+      // STEP 1: WEIL CHAIN VERIFICATION
       // ========================================================================
       console.log('[Weil Chain] Generating execution receipt...');
       
-      const { verifyBondMinting, linkSolanaTransaction } = await import('./lib/weilChain');
+      const { verifyBondMinting } = await import('./lib/weilChain');
       
       const verificationInput = {
-        wallet_address: pubkey,
+        wallet_address: currentWallet.address,
         bond_id: bond.id,
         bond_name: bond.name,
         units: inrAmount / bond.pricePerUnit,
@@ -279,6 +216,9 @@ const App: React.FC = () => {
         }
       };
       
+      console.log('[Weil Chain] Verification input:', verificationInput);
+      console.log('[Weil Chain] Current wallet:', currentWallet);
+      
       const verificationResult = await verifyBondMinting(verificationInput);
       
       if (!verificationResult.success || !verificationResult.verified) {
@@ -291,55 +231,34 @@ const App: React.FC = () => {
       console.log('[Weil Chain] Receipt generated:', verificationResult.receiptId);
       
       // ========================================================================
-      // STEP 2: SOLANA TRANSACTION (EXISTING LOGIC)
+      // STEP 2: WEIL CHAIN TRANSACTION
       // ========================================================================
-      const solToPay = inrAmount / SOL_TO_INR_DEMO_RATE;
-      const lamports = Math.floor(solToPay * web3.LAMPORTS_PER_SOL);
+      const weilToPay = inrAmount / WEIL_TO_INR_RATE;
+      
+      if (weilToPay > weilBalance) {
+        alert('Insufficient WEIL balance');
+        setIsMinting(false);
+        return;
+      }
 
-      const transaction = new web3.Transaction().add(
-        web3.SystemProgram.transfer({
-          fromPubkey: new web3.PublicKey(pubkey),
-          toPubkey: TREASURY_PUBKEY,
-          lamports,
-        })
+      console.log('[Weil Chain] Sending transaction...');
+      
+      // Simulate Weil Chain transaction
+      const transaction = await weilWallet.sendTransaction(
+        'weil_treasury_address', // Treasury address
+        weilToPay
       );
-
-      transaction.feePayer = new web3.PublicKey(pubkey);
-      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
-      transaction.recentBlockhash = blockhash;
-
-      console.log('[Phantom] Requesting transaction signature from extension...');
       
-      const { signature } = await solana.signAndSendTransaction(transaction);
+      console.log('[Weil Chain] Transaction confirmed:', transaction.hash);
       
-      console.log('[Phantom] Transaction signed. Signature:', signature);
-      console.log('[Phantom] Waiting for Devnet confirmation...');
-
-      const confirmation = await connection.confirmTransaction({
-        signature,
-        blockhash,
-        lastValidBlockHeight
-      });
-
-      if (confirmation.value.err) {
-        throw new Error("Transaction failed on-chain.");
-      }
-
-      console.log('[Phantom] Transaction confirmed successfully.');
+      // Update balance
+      setWeilBalance(prev => prev - weilToPay);
 
       // ========================================================================
-      // STEP 3: LINK SOLANA TX TO WEIL CHAIN RECEIPT
-      // ========================================================================
-      if (verificationResult.receiptId) {
-        await linkSolanaTransaction(verificationResult.receiptId, signature);
-        console.log('[Weil Chain] Receipt linked to Solana transaction');
-      }
-
-      // ========================================================================
-      // STEP 4: SAVE HOLDING (EXISTING LOGIC)
+      // STEP 3: SAVE HOLDING
       // ========================================================================
       const newHolding: Holding = {
-        id: `BOND-${signature.slice(0, 8)}`.toUpperCase(),
+        id: `BOND-${transaction.hash.slice(0, 8)}`.toUpperCase(),
         bondId: bond.id,
         bondName: bond.name,
         units: inrAmount / bond.pricePerUnit,
@@ -347,12 +266,12 @@ const App: React.FC = () => {
         purchaseDate: new Date().toISOString(),
         apy: bond.apy,
         maturityDate: bond.maturityDate,
-        txHash: signature
+        txHash: transaction.hash
       };
 
       const holdingRecord: HoldingRecord = {
         id: newHolding.id,
-        wallet_address: pubkey,
+        wallet_address: currentWallet.address,
         bond_id: newHolding.bondId,
         bond_name: newHolding.bondName,
         units: newHolding.units,
@@ -369,27 +288,26 @@ const App: React.FC = () => {
       }
 
       setPortfolio(prev => [...prev, newHolding]);
-      fetchBalance(new web3.PublicKey(pubkey));
       
       setMintSuccessData({
         isOpen: true,
         bondName: bond.name,
-        txSignature: signature,
+        txSignature: transaction.hash,
         investedAmount: inrAmount,
         units: inrAmount / bond.pricePerUnit,
         certificateId: newHolding.id,
-        receiptId: verificationResult.receiptId // Pass receipt ID to modal
+        receiptId: verificationResult.receiptId
       });
     } catch (err: any) {
       console.error("[Transaction Error]:", err);
-      if (err.code === 4001) {
-        alert("Transaction request was cancelled by the user.");
-      } else {
-        alert(err.message || "An error occurred during the transaction.");
-      }
+      alert(err.message || "An error occurred during the transaction.");
     } finally {
       setIsMinting(false);
     }
+  };
+
+  const handleBalanceUpdate = (newBalance: number) => {
+    setWeilBalance(newBalance);
   };
 
   const renderContent = () => {
@@ -398,10 +316,12 @@ const App: React.FC = () => {
     }
 
     switch (currentView) {
-      case 'dashboard': return <Dashboard address={pubkey!} portfolio={portfolio} solBalance={solBalance} />;
-      case 'market': return <Marketplace bonds={marketBonds} balance={solBalance * SOL_TO_INR_DEMO_RATE} solBalance={solBalance} onBuy={buyBondWithNFT} isMinting={isMinting} />;
+      case 'dashboard': return <Dashboard address={currentWallet?.address || ''} portfolio={portfolio} weilBalance={weilBalance} />;
+      case 'market': return <Marketplace bonds={marketBonds} balance={weilBalance * WEIL_TO_INR_RATE} weilBalance={weilBalance} onBuy={buyBondWithNFT} isMinting={isMinting} />;
       case 'portfolio': return <Portfolio portfolio={portfolio} tick={tick} />;
-      case 'yield': return <YieldPage portfolio={portfolio} balance={solBalance * SOL_TO_INR_DEMO_RATE} tick={tick} />;
+      case 'yield': return <YieldPage portfolio={portfolio} balance={weilBalance * WEIL_TO_INR_RATE} tick={tick} />;
+      case 'sip': return <SIPPage balance={weilBalance * WEIL_TO_INR_RATE} weilBalance={weilBalance} />;
+      case 'faucet': return <Faucet onBalanceUpdate={handleBalanceUpdate} currentBalance={weilBalance} />;
       case 'education': return <Education marketBonds={marketBonds} onNavigate={setCurrentView} />;
       case 'landing': return <LandingPage onConnect={handleWalletClick} isConnected={walletConnected} />;
       case 'receipt': return currentReceiptId ? <ExecutionReceipt receiptId={currentReceiptId} onBack={() => setCurrentView('portfolio')} /> : <LandingPage onConnect={handleWalletClick} isConnected={walletConnected} />;
@@ -414,7 +334,7 @@ const App: React.FC = () => {
       <Navbar 
         onConnect={handleWalletClick} 
         isConnected={walletConnected} 
-        address={pubkey} 
+        address={currentWallet?.address || ''} 
         onNavigate={setCurrentView} 
         currentView={currentView} 
       />
@@ -440,7 +360,7 @@ const App: React.FC = () => {
           isOpen={mintSuccessData.isOpen}
           onClose={() => setMintSuccessData(null)}
           bondName={mintSuccessData.bondName}
-          publicKey={pubkey || ''}
+          publicKey={currentWallet?.address || ''}
           txSignature={mintSuccessData.txSignature}
           investedAmount={mintSuccessData.investedAmount}
           units={mintSuccessData.units}

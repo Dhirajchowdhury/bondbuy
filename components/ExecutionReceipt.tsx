@@ -16,8 +16,43 @@ const ExecutionReceipt: React.FC<ExecutionReceiptProps> = ({ receiptId, onBack }
 
   const loadReceipt = async () => {
     setLoading(true);
-    const data = await getExecutionReceipt(receiptId);
-    setReceipt(data);
+    
+    // Check if this is a temporary receipt ID
+    if (receiptId.startsWith('TEMP-')) {
+      // Create a mock receipt for demo purposes
+      const mockReceipt: ReceiptType = {
+        id: receiptId,
+        wallet_address: 'Demo Wallet',
+        bond_id: 'DEMO-BOND',
+        bond_name: 'Demo Government Bond',
+        units: 1,
+        invested_amount: 1000,
+        rules_verified: {
+          bond_active: true,
+          supply_available: true,
+          apy_valid: true,
+          maturity_future: true,
+          minimum_investment_met: true,
+          wallet_valid: true
+        },
+        receipt_hash: 'DEMO-HASH-' + receiptId.split('-')[1],
+        receipt_id: receiptId,
+        execution_status: 'VERIFIED',
+        verification_errors: null,
+        weil_chain_block: 'DEMO-BLOCK-' + Math.floor(Math.random() * 1000000),
+        weil_chain_network: 'EIBS-2.0-Testnet',
+        weil_chain_executor: 'BondBuy-MintVerification-v1.0',
+        solana_tx_hash: null,
+        solana_tx_confirmed: false,
+        created_at: new Date().toISOString()
+      };
+      setReceipt(mockReceipt);
+    } else {
+      // Try to fetch from Supabase
+      const data = await getExecutionReceipt(receiptId);
+      setReceipt(data);
+    }
+    
     setLoading(false);
   };
 
