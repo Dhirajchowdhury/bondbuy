@@ -54,7 +54,7 @@ const Faucet: React.FC<FaucetProps> = ({ onBalanceUpdate, currentBalance }) => {
         <p className="text-zinc-500 font-bold uppercase tracking-widest text-sm">
           Get test <span className="text-white">WEIL tokens</span> for bond investments.
           <br />
-          <span className="text-orange-500 text-xs">Free testnet tokens • 10 WEIL per request • Once per 24 hours</span>
+          <span className="text-orange-500 text-xs">Free testnet tokens • 10 WEIL per request • Once in a day</span>
         </p>
       </header>
 
