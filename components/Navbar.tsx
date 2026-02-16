@@ -60,7 +60,7 @@ const Navbar: React.FC<NavbarProps> = ({ onConnect, isConnected, address, onNavi
           {isConnected && (
             <div className="hidden lg:flex flex-col items-end">
               <span className="text-[8px] font-black text-orange-500 uppercase tracking-widest">Weil Chain</span>
-              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-tight">EIBS Network</span>
+              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-tight">Blockchain Network</span>
             </div>
           )}
           <button 
